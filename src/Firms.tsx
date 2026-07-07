@@ -3,6 +3,7 @@
 // avocats du cabinet + agrégats (décisions, taux estimé, matières, montant médian).
 import { useEffect, useState } from 'react';
 import { euro, estSignificatif, firm, firms, pct, type Firm, type FirmProfile } from './api';
+import { Drawer, Err, Loader, useAsync } from './ui';
 
 const SORTS = [{ key: 'cases', label: 'Volume' }, { key: 'winrate', label: 'Taux estimé' }];
 
@@ -66,16 +67,11 @@ export function Firms() {
 }
 
 function FirmDrawer({ name, onClose }: { name: string; onClose: () => void }) {
-  const [p, setP] = useState<FirmProfile | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  useEffect(() => { setP(null); firm(name).then(setP).catch((e) => setErr(e.message)); }, [name]);
-
+  const { data: p, error: err } = useAsync<FirmProfile>(() => firm(name), [name]);
   return (
-    <div className="drawer-overlay" onClick={onClose}>
-      <aside className="drawer" onClick={(e) => e.stopPropagation()}>
-        <button className="drawer-close" onClick={onClose} aria-label="Fermer">✕</button>
-        {err && <p className="warn">⚠ {err}</p>}
-        {!p && !err && <p className="muted">Chargement…</p>}
+    <Drawer onClose={onClose}>
+        {err && <Err message={err} />}
+        {!p && !err && <Loader />}
         {p && (
           <>
             <h2 className="profile-name">{p.firm}</h2>
@@ -99,7 +95,6 @@ function FirmDrawer({ name, onClose }: { name: string; onClose: () => void }) {
             <p className="disclaimer">Rattachement au cabinet fondé sur les mentions « Étude X » du texte — couverture partielle, indicatif.</p>
           </>
         )}
-      </aside>
-    </div>
+    </Drawer>
   );
 }

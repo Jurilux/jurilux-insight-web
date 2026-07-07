@@ -6,6 +6,7 @@ import {
   type Lawyer, type Matter, type Profile,
 } from './api';
 import { RateBar } from './charts';
+import { Drawer, Err, Loader, useAsync } from './ui';
 import { juridictionLabel, jurisCourt, jurisDate, jurisRef } from './juridictions';
 
 const SORTS: { key: string; label: string }[] = [
@@ -99,17 +100,12 @@ export function Lawyers({ matterFilter, onBenchmark, benchmark }:
 
 function ProfileDrawer({ keyName, onClose, onBenchmark }:
   { keyName: string; onClose: () => void; onBenchmark: (key: string) => void }) {
-  const [p, setP] = useState<Profile | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  useEffect(() => { setP(null); lawyer(keyName).then(setP).catch((e) => setErr(e.message)); }, [keyName]);
-
+  const { data: p, error: err } = useAsync<Profile>(() => lawyer(keyName), [keyName]);
   const rate = p && p.decided ? p.won / p.decided : null;
   return (
-    <div className="drawer-overlay" onClick={onClose}>
-      <aside className="drawer" onClick={(e) => e.stopPropagation()}>
-        <button className="drawer-close" onClick={onClose} aria-label="Fermer">✕</button>
-        {err && <p className="warn">⚠ {err}</p>}
-        {!p && !err && <p className="muted">Chargement du profil…</p>}
+    <Drawer onClose={onClose}>
+        {err && <Err message={err} />}
+        {!p && !err && <Loader label="Chargement du profil…" />}
         {p && (
           <>
             <h2 className="profile-name">Maître {p.name}</h2>
@@ -167,7 +163,6 @@ function ProfileDrawer({ keyName, onClose, onBenchmark }:
             <p className="disclaimer">{TAUX_ESTIME}</p>
           </>
         )}
-      </aside>
-    </div>
+    </Drawer>
   );
 }

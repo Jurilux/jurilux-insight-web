@@ -1,24 +1,16 @@
 // Rapport imprimable (must-have H) — livrable cabinet/client. Génération PDF SANS dépendance :
 // mise en page « print » + window.print() (l'utilisateur enregistre en PDF depuis le navigateur).
-import { useEffect, useState } from 'react';
 import { analytics, euro, firms, lawyers, overview, pct, type Analytics, type Firm, type Lawyer, type Overview } from './api';
+import { Err, Loader, useAsync } from './ui';
 import { juridictionLabel } from './juridictions';
 
 export function Report() {
-  const [ov, setOv] = useState<Overview | null>(null);
-  const [an, setAn] = useState<Analytics | null>(null);
-  const [tops, setTops] = useState<Lawyer[]>([]);
-  const [fs, setFs] = useState<Firm[]>([]);
-  const [err, setErr] = useState<string | null>(null);
+  const { data, error } = useAsync<[Overview, Analytics, Lawyer[], Firm[]]>(
+    () => Promise.all([overview(), analytics(), lawyers('', 10, 'cases'), firms('', 8, 'cases')]), []);
 
-  useEffect(() => {
-    Promise.all([overview(), analytics(), lawyers('', 10, 'cases'), firms('', 8, 'cases')])
-      .then(([o, a, l, f]) => { setOv(o); setAn(a); setTops(l); setFs(f); })
-      .catch((e) => setErr(e.message));
-  }, []);
-
-  if (err) return <p className="warn">⚠ {err}</p>;
-  if (!ov || !an) return <p className="muted">Préparation du rapport…</p>;
+  if (error) return <Err message={error} />;
+  if (!data) return <Loader label="Préparation du rapport…" />;
+  const [ov, an, tops, fs] = data;
 
   return (
     <div className="view">

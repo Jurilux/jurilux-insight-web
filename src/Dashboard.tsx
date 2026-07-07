@@ -3,23 +3,17 @@
 import { useEffect, useState } from 'react';
 import { analytics, euro, overview, pct, topArticles, TAUX_ESTIME, type Analytics, type ArticleCite, type Overview } from './api';
 import { BarList, Kpi, YearTrend } from './charts';
+import { Err, Loader, useAsync } from './ui';
 import { juridictionLabel } from './juridictions';
 
 export function Dashboard({ onPickMatter }: { onPickMatter: (m: string) => void }) {
-  const [ov, setOv] = useState<Overview | null>(null);
-  const [an, setAn] = useState<Analytics | null>(null);
+  const { data, error } = useAsync<[Overview, Analytics]>(() => Promise.all([overview(), analytics()]), []);
   const [arts, setArts] = useState<ArticleCite[]>([]);
-  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => { topArticles(12).then(setArts).catch(() => {}); }, []);
 
-  useEffect(() => {
-    Promise.all([overview(), analytics()])
-      .then(([o, a]) => { setOv(o); setAn(a); })
-      .catch((e) => setErr(e.message || 'Erreur de chargement'));
-    topArticles(12).then(setArts).catch(() => {});
-  }, []);
-
-  if (err) return <p className="warn">⚠ {err}</p>;
-  if (!ov || !an) return <p className="muted">Chargement des tableaux de bord…</p>;
+  if (error) return <Err message={error} />;
+  if (!data) return <Loader label="Chargement des tableaux de bord…" />;
+  const [ov, an] = data;
 
   const empty = ov.cases === 0;
   const years = an.by_year
