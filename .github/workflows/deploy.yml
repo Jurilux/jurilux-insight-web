@@ -1,0 +1,70 @@
+# Déploiement du front Jurilux Insight → insight.jurilux.lu
+#   branche main → prod (insight.jurilux.lu) → /var/www/juriscope/insight/current
+# Backend jurilux-insight servi par Caddy (/api,/health -> 127.0.0.1:8089 ; /docs -> /data/pdfs).
+# Même mécanique SSH que jurilux-web (alias deploytarget + user deploy en dur).
+# Secrets requis (repo jurilux-insight-web) : DEPLOY_HOST, DEPLOY_SSH_KEY.
+name: Deploy Insight Front
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-insight-front
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+      - name: Setup SSH
+        env:
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          {
+            echo "Host deploytarget"
+            echo "  HostName $HOST"
+            echo "  User deploy"
+            echo "  IdentityFile ~/.ssh/deploy_key"
+            echo "  IdentitiesOnly yes"
+            echo "  StrictHostKeyChecking accept-new"
+          } > ~/.ssh/config
+          chmod 600 ~/.ssh/config
+
+      - name: Deploy
+        run: |
+          BASE="/var/www/juriscope/insight"
+          TS="$(date +%F_%H%M%S)_${GITHUB_SHA::7}"
+          ssh deploytarget "sudo mkdir -p '$BASE/releases/$TS' && sudo chown -R deploy:deploy '$BASE/releases/$TS'"
+          rsync -az --delete dist/ "deploytarget:$BASE/releases/$TS/"
+          ssh deploytarget "sudo ln -sfn '$BASE/releases/$TS' '$BASE/current' && sudo chown -h deploy:www-data '$BASE/current'"
+          # ne garder que les 5 dernières releases
+          ssh deploytarget "cd '$BASE/releases' && ls -1dt */ | tail -n +6 | xargs -r sudo rm -rf"
+          echo "Déployé $TS → $BASE"
+
+      - name: Smoke test
+        run: |
+          sleep 2
+          curl -sSf -o /dev/null -w "front insight (insight.jurilux.lu): %{http_code}\n" \
+            "https://insight.jurilux.lu/"
