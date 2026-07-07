@@ -2,7 +2,7 @@
 // issue estimée, matières, réseau de confrères). Bouton « + benchmark » et export CSV.
 import { useEffect, useState } from 'react';
 import {
-  exportLawyersUrl, lawyer, lawyers, matters, pct, TAUX_ESTIME,
+  estSignificatif, exportLawyersUrl, lawyer, lawyers, matters, pct, TAUX_ESTIME,
   type Lawyer, type Matter, type Profile,
 } from './api';
 import { RateBar } from './charts';
@@ -75,7 +75,11 @@ export function Lawyers({ matterFilter, onBenchmark, benchmark }:
                 <tr key={l.name_key}>
                   <td><button className="linklike" onClick={() => setOpen(l.name_key)}>{l.name}</button></td>
                   <td className="num">{l.cases}</td>
-                  <td className="num">{l.decided ? pct(rate) : <span className="muted">n/a</span>}</td>
+                  <td className="num">{l.decided
+                    ? <span title={estSignificatif(l.decided) ? '' : `Échantillon faible (${l.decided} issues estimables)`}>
+                        {pct(rate)}{!estSignificatif(l.decided) && <span className="lowconf" aria-label="échantillon faible"> ~</span>}
+                      </span>
+                    : <span className="muted">n/a</span>}</td>
                   <td>{l.first_year ? (l.first_year === l.last_year ? l.first_year : `${l.first_year}–${l.last_year}`) : '—'}</td>
                   <td>
                     <button className={'chip' + (inBench ? ' chip-on' : '')} disabled={inBench}

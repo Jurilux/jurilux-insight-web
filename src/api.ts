@@ -7,13 +7,37 @@ export class HttpError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
 
+// ---------- session (jeton opaque, en-tête Bearer) ----------
+const TOKEN_KEY = 'jurilux_insight_token';
+const EMAIL_KEY = 'jurilux_insight_email';
+export const getToken = () => localStorage.getItem(TOKEN_KEY);
+export const getStoredEmail = () => localStorage.getItem(EMAIL_KEY);
+function storeSession(token: string, email: string) { localStorage.setItem(TOKEN_KEY, token); localStorage.setItem(EMAIL_KEY, email); }
+export function clearSession() { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(EMAIL_KEY); }
+function authHeaders(): Record<string, string> {
+  const t = getToken();
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(path, { headers: { Accept: 'application/json' } });
+  const res = await fetch(path, { headers: { Accept: 'application/json', ...authHeaders() } });
   if (!res.ok) {
     const d = await res.json().catch(() => ({} as { detail?: string }));
     throw new HttpError(res.status, d.detail || `Erreur (HTTP ${res.status})`);
   }
   return (await res.json()) as T;
+}
+
+async function send<T>(path: string, method: string, body?: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method, headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const d = await res.json().catch(() => ({} as { detail?: string }));
+    throw new HttpError(res.status, d.detail || `Erreur (HTTP ${res.status})`);
+  }
+  return (await res.json().catch(() => ({}))) as T;
 }
 
 // ---------- types (miroir des formes backend, cf. app/insight.py) ----------
@@ -95,3 +119,80 @@ export function pct(v: number | null | undefined): string {
 
 // Le taux de succès est ESTIMÉ (heuristique sur le dispositif) → jamais présenté comme certain.
 export const TAUX_ESTIME = 'Taux de succès estimé (indicatif) — heuristique sur le dispositif, jamais une certitude.';
+
+// Seuil de significativité : sous ce nombre d'issues estimables, un taux n'est pas fiable.
+export const SEUIL_SIGNIF = 10;
+export const estSignificatif = (decided?: number | null) => (decided ?? 0) >= SEUIL_SIGNIF;
+
+// ---------- comptes (must-have B2B : accès protégé) ----------
+export interface AuthUser { email: string; plan?: string; is_admin?: boolean }
+export interface Me { email: string; plan: string; is_admin: boolean; quota?: { limit: number | null; used: number; remaining: number | null } }
+
+async function authCall(path: string, email: string, password: string): Promise<AuthUser> {
+  const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+  const data = await res.json().catch(() => ({} as { detail?: string; token?: string; user?: { email: string } }));
+  if (!res.ok) throw new HttpError(res.status, data.detail || `Erreur (HTTP ${res.status})`);
+  storeSession(data.token!, data.user!.email);
+  return data.user as AuthUser;
+}
+export const login = (email: string, password: string) => authCall('/api/auth/login', email, password);
+export const register = (email: string, password: string) => authCall('/api/auth/register', email, password);
+export async function logout(): Promise<void> {
+  try { await fetch('/api/auth/logout', { method: 'POST', headers: { ...authHeaders() } }); } finally { clearSession(); }
+}
+export async function me(): Promise<Me | null> {
+  try {
+    const res = await fetch('/api/me', { headers: { ...authHeaders() } });
+    if (!res.ok) return null;
+    const d = await res.json();
+    return { email: d.user.email, plan: d.user.plan, is_admin: !!d.user.is_admin, quota: d.quota };
+  } catch { return null; }
+}
+export async function oidcEnabled(): Promise<boolean> {
+  try { return (await (await fetch('/api/auth/oidc/enabled')).json()).enabled === true; } catch { return false; }
+}
+export const oidcLogin = () => { window.location.href = '/api/auth/oidc/login'; };
+export function captureOidcToken(): void {
+  const m = window.location.hash.match(/token=([^&]+)/);
+  if (m) { storeSession(decodeURIComponent(m[1]), getStoredEmail() || ''); history.replaceState(null, '', window.location.pathname); }
+}
+
+// ---------- recherche jurisprudentielle (RAG — must-have : trouver/lire les décisions) ----------
+export interface Citation {
+  doc_id: string; url?: string; pdf_url?: string; year?: number | null;
+  juridiction_key?: string | null; content?: string;
+  source_type?: 'jurisprudence' | 'law' | 'projet_loi'; title?: string;
+}
+export interface AskResponse {
+  answer: string | null; citations: Citation[]; refused: boolean;
+  status?: 'ok' | 'partial'; suggested_question?: string | null; follow_ups?: string[] | null;
+}
+export async function ask(q: string, topK = 20): Promise<AskResponse> {
+  const res = await fetch('/api/ask', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ q, topK, temperature: 0 }),
+  });
+  if (!res.ok) throw new HttpError(res.status, `Le serveur a répondu HTTP ${res.status}.`);
+  return (await res.json()) as AskResponse;
+}
+export function citationPdf(c: Citation): string | null {
+  if (c.source_type === 'law' && c.pdf_url) return c.pdf_url;
+  if (c.doc_id) return `/docs/${encodeURIComponent(c.doc_id)}.pdf`;
+  return c.pdf_url || c.url || null;
+}
+
+// ---------- veille / alertes (must-have B2B : suivre un sujet / une partie adverse) ----------
+export interface Alert { id: number; query: string; source_type: string | null; unseen: number; total: number; }
+export interface AlertHit {
+  id: number; doc_id: string; source_type: string | null; title: string | null;
+  year: number | null; juridiction_key: string | null; url: string | null; pdf_url: string | null; seen: number;
+}
+export const listAlerts = () => get<{ items: Alert[] }>('/api/alerts').then((d) => d.items);
+export const createAlert = (query: string, source_type?: string) => send<Alert>('/api/alerts', 'POST', { query, source_type });
+export const checkAlert = (id: number) => send<{ new: number }>(`/api/alerts/${id}/check`, 'POST');
+export const alertHits = (id: number) => get<{ items: AlertHit[] }>(`/api/alerts/${id}/hits`).then((d) => d.items);
+export const deleteAlert = (id: number) => send<{ ok: boolean }>(`/api/alerts/${id}`, 'DELETE');
+
+// ---------- RGPD : exercice des droits sur un profil d'avocat (must-have conformité) ----------
+export const rgpdRequest = (name: string, kind: 'acces' | 'rectification' | 'opposition', email?: string, message?: string) =>
+  send<{ ok: boolean; id: number }>('/api/insight/rgpd-request', 'POST', { name, kind, email, message });
