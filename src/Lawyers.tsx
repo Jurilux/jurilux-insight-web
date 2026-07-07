@@ -113,6 +113,7 @@ function ProfileDrawer({ keyName, onClose, onBenchmark }:
         {p && (
           <>
             <h2 className="profile-name">Maître {p.name}</h2>
+            {p.firm && <p className="muted small profile-firm">🏛 {p.firm}</p>}
             <div className="kpi-row tight">
               <div className="kpi"><div className="kpi-value">{p.cases_count}</div><div className="kpi-label">décisions</div></div>
               <div className="kpi"><div className="kpi-value">{pct(rate)}</div><div className="kpi-label">taux estimé</div></div>

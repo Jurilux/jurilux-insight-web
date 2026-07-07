@@ -3,20 +3,24 @@
 import { useState } from 'react';
 import { Dashboard } from './Dashboard';
 import { Lawyers } from './Lawyers';
+import { Firms } from './Firms';
 import { Compare } from './Compare';
 import { Search } from './Search';
 import { Alerts } from './Alerts';
+import { Report } from './Report';
 import { Methodology } from './Methodology';
 import { getStoredEmail, logout } from './api';
 
-type Tab = 'dashboard' | 'lawyers' | 'compare' | 'search' | 'alerts' | 'methodology';
+type Tab = 'dashboard' | 'lawyers' | 'firms' | 'compare' | 'search' | 'alerts' | 'report' | 'methodology';
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: 'dashboard', label: "Vue d'ensemble", icon: '▤' },
   { key: 'lawyers', label: 'Avocats', icon: '⚖' },
+  { key: 'firms', label: 'Cabinets', icon: '🏛' },
   { key: 'compare', label: 'Comparateur', icon: '⇄' },
   { key: 'search', label: 'Recherche', icon: '🔍' },
   { key: 'alerts', label: 'Veille', icon: '🔔' },
+  { key: 'report', label: 'Rapport', icon: '📄' },
   { key: 'methodology', label: 'Méthodologie', icon: 'ⓘ' },
 ];
 
@@ -54,6 +58,7 @@ export function App() {
       <main className="main">
         {tab === 'dashboard' && <Dashboard onPickMatter={(m) => { setMatterFilter(m); setTab('lawyers'); }} />}
         {tab === 'lawyers' && <Lawyers matterFilter={matterFilter} benchmark={bench} onBenchmark={addBench} />}
+        {tab === 'firms' && <Firms />}
         {tab === 'compare' && (
           <Compare keys={bench}
             onRemove={(k) => setBench((b) => b.filter((x) => x !== k))}
@@ -62,6 +67,7 @@ export function App() {
         )}
         {tab === 'search' && <Search />}
         {tab === 'alerts' && <Alerts />}
+        {tab === 'report' && <Report />}
         {tab === 'methodology' && <Methodology />}
       </main>
     </div>

@@ -67,6 +67,23 @@ await step('Benchmark — comparateur 2 avocats', async () => {
   await page.screenshot({ path: `${OUT}/compare.png`, fullPage: true });
 });
 
+await step('Cabinets — liste + fiche cabinet', async () => {
+  await clickNav('Cabinets');
+  await page.locator('table.grid tbody tr').first().waitFor({ state: 'visible', timeout: 8000 });
+  await page.locator('table.grid tbody tr .linklike').first().click();
+  await seeText('Avocats du cabinet');
+  await page.screenshot({ path: `${OUT}/firms.png`, fullPage: true });
+  await page.locator('.drawer-close').click();
+});
+
+await step('Rapport — vue imprimable (PDF)', async () => {
+  await clickNav('Rapport');
+  await seeText("Rapport d'intelligence contentieux");
+  await seeText('Synthèse');
+  await page.getByRole('button', { name: /Imprimer/ }).waitFor({ state: 'visible', timeout: 8000 });
+  await page.screenshot({ path: `${OUT}/report.png`, fullPage: true });
+});
+
 await step('Recherche jurisprudentielle — soumission sans crash', async () => {
   await clickNav('Recherche');
   await page.getByPlaceholder(/préavis|Question|licenciement/).first().waitFor({ state: 'visible', timeout: 8000 });

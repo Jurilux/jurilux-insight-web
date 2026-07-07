@@ -77,8 +77,17 @@ export interface Profile {
   name_key: string; name: string; cases_count: number;
   first_year: number | null; last_year: number | null;
   as_demandeur: number; as_defendeur: number; won: number; lost: number; decided: number;
-  amount_median?: number | null; amount_n?: number;
+  amount_median?: number | null; amount_n?: number; firm?: string | null;
   matters: Matter[]; cocounsel: CoCounsel[]; cases: Case[];
+}
+
+export interface Firm { firm: string; cases: number; lawyers: number; won: number; decided: number; win_rate: number | null; }
+export interface FirmProfile {
+  firm: string; cases_count: number; lawyers_count: number;
+  won: number; lost: number; decided: number; win_rate: number | null;
+  amount_median?: number | null; amount_n?: number;
+  first_year: number | null; last_year: number | null;
+  matters: Matter[]; lawyers: { name_key: string; name: string; cases: number }[];
 }
 
 export interface CompareProfile {
@@ -107,6 +116,11 @@ export const lawyers = (q = '', limit = 50, sort = 'cases', matter = '') =>
 
 export const lawyer = (key: string) =>
   get<Profile>(`/api/insight/lawyers/${encodeURIComponent(key)}`);
+
+export const firms = (q = '', limit = 60, sort = 'cases') =>
+  get<{ items: Firm[] }>(`/api/insight/firms?limit=${limit}&sort=${sort}${q ? `&q=${encodeURIComponent(q)}` : ''}`).then((d) => d.items);
+export const firm = (name: string) =>
+  get<FirmProfile>(`/api/insight/firms/${encodeURIComponent(name)}`);
 
 export const compare = (keys: string[]) =>
   get<{ profiles: CompareProfile[] }>(`/api/insight/compare?keys=${encodeURIComponent(keys.join(','))}`)
