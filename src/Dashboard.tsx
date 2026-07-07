@@ -1,19 +1,21 @@
 // Vue d'ensemble — accueil analytics. KPIs globaux + répartition par matière /
 // juridiction / année (données publiques, avocats/parties uniquement).
 import { useEffect, useState } from 'react';
-import { analytics, euro, overview, pct, TAUX_ESTIME, type Analytics, type Overview } from './api';
+import { analytics, euro, overview, pct, topArticles, TAUX_ESTIME, type Analytics, type ArticleCite, type Overview } from './api';
 import { BarList, Kpi, YearTrend } from './charts';
 import { juridictionLabel } from './juridictions';
 
 export function Dashboard({ onPickMatter }: { onPickMatter: (m: string) => void }) {
   const [ov, setOv] = useState<Overview | null>(null);
   const [an, setAn] = useState<Analytics | null>(null);
+  const [arts, setArts] = useState<ArticleCite[]>([]);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([overview(), analytics()])
       .then(([o, a]) => { setOv(o); setAn(a); })
       .catch((e) => setErr(e.message || 'Erreur de chargement'));
+    topArticles(12).then(setArts).catch(() => {});
   }, []);
 
   if (err) return <p className="warn">⚠ {err}</p>;
@@ -72,11 +74,21 @@ export function Dashboard({ onPickMatter }: { onPickMatter: (m: string) => void 
         </section>
       </div>
 
-      <section className="card">
-        <h2>Évolution par année</h2>
-        <p className="muted small">Nombre de décisions analysées par millésime.</p>
-        <YearTrend points={years} />
-      </section>
+      <div className="grid-2">
+        <section className="card">
+          <h2>Évolution par année</h2>
+          <p className="muted small">Nombre de décisions analysées par millésime.</p>
+          <YearTrend points={years} />
+        </section>
+
+        {arts.length > 0 && (
+          <section className="card">
+            <h2>Textes les plus cités</h2>
+            <p className="muted small">Articles de loi visés — nombre de décisions.</p>
+            <BarList unit="décisions" rows={arts.map((a) => ({ label: 'Art. ' + a.article, value: a.decisions }))} />
+          </section>
+        )}
+      </div>
 
       <p className="disclaimer">{TAUX_ESTIME} Profilage limité aux avocats et parties — aucune donnée sur les magistrats.</p>
     </div>

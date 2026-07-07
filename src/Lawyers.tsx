@@ -2,7 +2,7 @@
 // issue estimée, matières, réseau de confrères). Bouton « + benchmark » et export CSV.
 import { useEffect, useState } from 'react';
 import {
-  estSignificatif, euro, exportLawyersUrl, lawyer, lawyers, matters, pct, TAUX_ESTIME,
+  estSignificatif, euro, exportLawyersUrl, lawyer, lawyers, matters, pct, sensLabel, TAUX_ESTIME,
   type Lawyer, type Matter, type Profile,
 } from './api';
 import { RateBar } from './charts';
@@ -158,6 +158,8 @@ function ProfileDrawer({ keyName, onClose, onBenchmark }:
                     {c.side && <span className={'sidetag side-' + c.side}>{c.side === 'A' ? 'demandeur' : 'défendeur'}</span>}
                     {c.won === 1 && <span className="out out-w">issue estimée : gagné</span>}
                     {c.won === 0 && <span className="out out-l">issue estimée : perdu</span>}
+                    {c.sens && <span className="sens-tag">{sensLabel(c.sens)}</span>}
+                    {c.articles && <span className="muted small arts"> · art. {c.articles.split(';').slice(0, 4).join(', ')}</span>}
                   </li>
                 ))}
               </ul>

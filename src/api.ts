@@ -71,7 +71,10 @@ export interface CoCounsel { name_key: string; name: string; count: number; rela
 export interface Case {
   display_name: string; doc_id: string; year: number | null;
   juridiction_key: string | null; side?: string | null; won?: number | null; matter?: string | null;
+  articles?: string | null; sens?: string | null;
 }
+
+export interface ArticleCite { article: string; decisions: number; }
 
 export interface Profile {
   name_key: string; name: string; cases_count: number;
@@ -106,6 +109,13 @@ export const analytics = (matter = '', juridiction = '') =>
     + (juridiction ? `${matter ? '&' : '?'}juridiction=${encodeURIComponent(juridiction)}` : ''));
 
 export const matters = () => get<{ items: Matter[] }>('/api/insight/matters').then((d) => d.items);
+
+export const topArticles = (limit = 12) => get<{ items: ArticleCite[] }>(`/api/insight/articles?limit=${limit}`).then((d) => d.items);
+
+// Libellé lisible du sens du dispositif.
+export const sensLabel = (s?: string | null): string => ({
+  confirmation: 'confirmé', réformation: 'réformé', cassation: 'cassé', rejet: 'pourvoi rejeté', irrecevabilité: 'irrecevable',
+} as Record<string, string>)[s || ''] || (s || '');
 
 export const lawyers = (q = '', limit = 50, sort = 'cases', matter = '') =>
   get<{ items: Lawyer[] }>(

@@ -132,6 +132,8 @@ select { padding: 9px 10px; border: 1px solid var(--line); border-radius: 9px; b
 .out { font-size: .72rem; margin-left: 6px; padding: 0 6px; border-radius: 4px; }
 .out-w { color: var(--good); background: color-mix(in srgb, var(--good) 14%, transparent); }
 .out-l { color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, transparent); }
+.sens-tag { font-size: .72rem; margin-left: 6px; padding: 0 6px; border-radius: 4px; color: var(--brand-ink); background: color-mix(in srgb, var(--brand) 12%, transparent); }
+.arts { display: inline; }
 
 /* --- rate bar --- */
 .ratebar { position: relative; background: var(--track); border-radius: 999px; height: 20px; overflow: hidden; margin: 6px 0; }
