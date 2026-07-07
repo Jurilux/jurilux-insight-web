@@ -41,11 +41,15 @@ async function send<T>(path: string, method: string, body?: unknown): Promise<T>
 }
 
 // ---------- types (miroir des formes backend, cf. app/insight.py) ----------
-export interface Row { cle: string | number; cases: number; decided: number; won: number; win_rate: number | null; }
+export interface Row {
+  cle: string | number; cases: number; decided: number; won: number; win_rate: number | null;
+  amount_median?: number | null; amount_n?: number;
+}
 
 export interface Overview {
   lawyers: number; cases: number; decided: number; won: number; win_rate: number | null;
   first_year: number | null; last_year: number | null;
+  amount_median?: number | null; amount_n?: number;
   top_matters: Row[]; top_juridictions: Row[];
 }
 
@@ -73,13 +77,15 @@ export interface Profile {
   name_key: string; name: string; cases_count: number;
   first_year: number | null; last_year: number | null;
   as_demandeur: number; as_defendeur: number; won: number; lost: number; decided: number;
+  amount_median?: number | null; amount_n?: number;
   matters: Matter[]; cocounsel: CoCounsel[]; cases: Case[];
 }
 
 export interface CompareProfile {
   name_key: string; name: string; cases: number; won: number; lost: number; decided: number;
   win_rate: number | null; as_demandeur: number; as_defendeur: number;
-  first_year: number | null; last_year: number | null; matters: Matter[];
+  first_year: number | null; last_year: number | null;
+  amount_median?: number | null; amount_n?: number; matters: Matter[];
 }
 
 // ---------- appels ----------
@@ -115,6 +121,13 @@ export const exportLawyersUrl = (q = '', sort = 'cases', matter = '', limit = 20
 // ---------- helpers de présentation ----------
 export function pct(v: number | null | undefined): string {
   return v == null ? '—' : `${Math.round(v * 100)} %`;
+}
+
+// Montant € (indicatif). Compact au-delà de 10 k (« 12,3 k € »), sinon entier groupé.
+export function euro(v: number | null | undefined): string {
+  if (v == null) return '—';
+  if (v >= 10000) return `${(v / 1000).toLocaleString('fr', { maximumFractionDigits: 1 })} k €`;
+  return `${Math.round(v).toLocaleString('fr')} €`;
 }
 
 // Le taux de succès est ESTIMÉ (heuristique sur le dispositif) → jamais présenté comme certain.

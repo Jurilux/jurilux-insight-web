@@ -11,9 +11,9 @@ export function Kpi({ label, value, hint }: { label: string; value: string; hint
   );
 }
 
-export interface BarRow { label: string; value: number; rate?: number | null; onClick?: () => void; }
+export interface BarRow { label: string; value: number; rate?: number | null; note?: string | null; onClick?: () => void; }
 
-// Liste de barres horizontales (volume), avec taux de succès estimé en pastille optionnelle.
+// Liste de barres horizontales (volume), avec taux de succès estimé + note (ex. montant) optionnels.
 export function BarList({ rows, unit = 'décisions' }: { rows: BarRow[]; unit?: string }) {
   const max = Math.max(1, ...rows.map((r) => r.value));
   if (!rows.length) return <p className="muted">Aucune donnée.</p>;
@@ -30,6 +30,7 @@ export function BarList({ rows, unit = 'décisions' }: { rows: BarRow[]; unit?: 
           <div className="barrow-val">
             {r.value.toLocaleString('fr')} <span className="muted">{unit}</span>
             {r.rate != null && <span className="rate-pill" title="Taux de succès estimé">{pct(r.rate)}</span>}
+            {r.note && <span className="amount-pill" title="Montant médian estimé (indicatif)">{r.note}</span>}
           </div>
         </div>
       ))}

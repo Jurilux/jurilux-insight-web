@@ -2,7 +2,7 @@
 // issue estimée, matières, réseau de confrères). Bouton « + benchmark » et export CSV.
 import { useEffect, useState } from 'react';
 import {
-  estSignificatif, exportLawyersUrl, lawyer, lawyers, matters, pct, TAUX_ESTIME,
+  estSignificatif, euro, exportLawyersUrl, lawyer, lawyers, matters, pct, TAUX_ESTIME,
   type Lawyer, type Matter, type Profile,
 } from './api';
 import { RateBar } from './charts';
@@ -117,6 +117,10 @@ function ProfileDrawer({ keyName, onClose, onBenchmark }:
               <div className="kpi"><div className="kpi-value">{p.cases_count}</div><div className="kpi-label">décisions</div></div>
               <div className="kpi"><div className="kpi-value">{pct(rate)}</div><div className="kpi-label">taux estimé</div></div>
               <div className="kpi"><div className="kpi-value">{p.as_demandeur}/{p.as_defendeur}</div><div className="kpi-label">dem. / déf.</div></div>
+              {(p.amount_n ?? 0) > 0 && (
+                <div className="kpi" title={`Médiane sur ${p.amount_n} décisions chiffrées`}>
+                  <div className="kpi-value">{euro(p.amount_median)}</div><div className="kpi-label">montant médian</div></div>
+              )}
             </div>
             <RateBar rate={rate} />
             <button className="btn" onClick={() => onBenchmark(p.name_key)}>+ Ajouter au benchmark</button>

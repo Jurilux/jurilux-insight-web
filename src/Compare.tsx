@@ -1,6 +1,6 @@
 // Comparateur — benchmark côte à côte de 2 à 6 avocats (endpoint /api/insight/compare).
 import { useEffect, useState } from 'react';
-import { compare, TAUX_ESTIME, type CompareProfile } from './api';
+import { compare, euro, TAUX_ESTIME, type CompareProfile } from './api';
 import { RateBar } from './charts';
 
 export function Compare({ keys, onRemove, onClear, onGoLawyers }:
@@ -56,6 +56,8 @@ export function Compare({ keys, onRemove, onClear, onGoLawyers }:
               <div key={p.name_key} className="cmp-cell"><RateBar rate={p.win_rate} /></div>
             ))}
             <Metric label="Issues estimables" cells={profiles.map((p) => String(p.decided))} />
+            <Metric label="Montant médian estimé" cells={profiles.map((p) => (p.amount_n ?? 0) > 0 ? euro(p.amount_median) : '—')}
+              best={idxMax(profiles.map((p) => p.amount_median ?? -1))} />
             <Metric label="Demandeur / Défendeur" cells={profiles.map((p) => `${p.as_demandeur} / ${p.as_defendeur}`)} />
             <Metric label="Période" cells={profiles.map((p) => p.first_year ? (p.first_year === p.last_year ? `${p.first_year}` : `${p.first_year}–${p.last_year}`) : '—')} />
             <div className="cmp-row-label">Matières</div>

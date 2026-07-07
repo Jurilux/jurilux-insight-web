@@ -40,8 +40,9 @@ await step('Mur d\'authentification → connexion (compte démo)', async () => {
   await seeText("Vue d'ensemble");  // le dashboard s'affiche une fois connecté
 });
 
-await step("Vue d'ensemble — KPIs et répartitions", async () => {
+await step("Vue d'ensemble — KPIs, montants et répartitions", async () => {
   await seeText('Avocats profilés');
+  await seeText('Montant médian estimé');   // must-have Tier 2 : quantum
   await seeText('Par matière');
   await page.screenshot({ path: `${OUT}/dashboard.png`, fullPage: true });
 });

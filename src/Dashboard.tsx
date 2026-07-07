@@ -1,7 +1,7 @@
 // Vue d'ensemble — accueil analytics. KPIs globaux + répartition par matière /
 // juridiction / année (données publiques, avocats/parties uniquement).
 import { useEffect, useState } from 'react';
-import { analytics, overview, pct, TAUX_ESTIME, type Analytics, type Overview } from './api';
+import { analytics, euro, overview, pct, TAUX_ESTIME, type Analytics, type Overview } from './api';
 import { BarList, Kpi, YearTrend } from './charts';
 import { juridictionLabel } from './juridictions';
 
@@ -46,6 +46,10 @@ export function Dashboard({ onPickMatter }: { onPickMatter: (m: string) => void 
         <Kpi label="Décisions analysées" value={ov.cases.toLocaleString('fr')} />
         <Kpi label="Issues estimables" value={ov.decided.toLocaleString('fr')} hint="Décisions dont l'issue est estimable par heuristique." />
         <Kpi label="Taux de succès global" value={pct(ov.win_rate)} hint={TAUX_ESTIME} />
+        {(ov.amount_n ?? 0) > 0 && (
+          <Kpi label="Montant médian estimé" value={euro(ov.amount_median)}
+            hint={`Médiane des montants du dispositif sur ${ov.amount_n} décisions chiffrées (indicatif).`} />
+        )}
       </div>
 
       <div className="grid-2">
@@ -53,7 +57,9 @@ export function Dashboard({ onPickMatter }: { onPickMatter: (m: string) => void 
           <h2>Par matière</h2>
           <p className="muted small">Volume et taux de succès estimé. Cliquez pour filtrer les avocats.</p>
           <BarList rows={an.by_matter.slice(0, 10).map((r) => ({
-            label: String(r.cle), value: r.cases, rate: r.win_rate, onClick: () => onPickMatter(String(r.cle)),
+            label: String(r.cle), value: r.cases, rate: r.win_rate,
+            note: (r.amount_n ?? 0) > 0 ? euro(r.amount_median) : null,
+            onClick: () => onPickMatter(String(r.cle)),
           }))} />
         </section>
 
