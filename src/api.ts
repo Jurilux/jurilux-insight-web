@@ -44,12 +44,14 @@ async function send<T>(path: string, method: string, body?: unknown): Promise<T>
 export interface Row {
   cle: string | number; cases: number; decided: number; won: number; win_rate: number | null;
   amount_median?: number | null; amount_n?: number;
+  delai_median?: number | null; delai_n?: number;
 }
 
 export interface Overview {
   lawyers: number; cases: number; decided: number; won: number; win_rate: number | null;
   first_year: number | null; last_year: number | null;
   amount_median?: number | null; amount_n?: number;
+  delai_median?: number | null; delai_n?: number;
   top_matters: Row[]; top_juridictions: Row[];
 }
 
@@ -152,6 +154,14 @@ export function euro(v: number | null | undefined): string {
   if (v == null) return '—';
   if (v >= 10000) return `${(v / 1000).toLocaleString('fr', { maximumFractionDigits: 1 })} k €`;
   return `${Math.round(v).toLocaleString('fr')} €`;
+}
+
+// Délai de procédure estimé (jours) → libellé lisible : « ~8 mois », « ~2,2 ans ».
+export function delai(days: number | null | undefined): string {
+  if (days == null) return '—';
+  if (days < 60) return `~${days} j`;
+  if (days < 545) return `~${Math.round(days / 30)} mois`;
+  return `~${(days / 365).toLocaleString('fr', { maximumFractionDigits: 1 })} ans`;
 }
 
 // Le taux de succès est ESTIMÉ (heuristique sur le dispositif) → jamais présenté comme certain.

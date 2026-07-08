@@ -1,6 +1,6 @@
 // Rapport imprimable (must-have H) — livrable cabinet/client. Génération PDF SANS dépendance :
 // mise en page « print » + window.print() (l'utilisateur enregistre en PDF depuis le navigateur).
-import { analytics, euro, firms, lawyers, overview, pct, type Analytics, type Firm, type Lawyer, type Overview } from './api';
+import { analytics, delai, euro, firms, lawyers, overview, pct, type Analytics, type Firm, type Lawyer, type Overview } from './api';
 import { Err, Loader, useAsync } from './ui';
 import { juridictionLabel } from './juridictions';
 
@@ -53,10 +53,11 @@ export function Report() {
         <section>
           <h3>Par juridiction</h3>
           <table className="report-table">
-            <thead><tr><th>Juridiction</th><th>Décisions</th><th>Taux estimé</th></tr></thead>
+            <thead><tr><th>Juridiction</th><th>Décisions</th><th>Taux estimé</th><th>Délai médian estimé</th></tr></thead>
             <tbody>
               {an.by_juridiction.slice(0, 8).map((r) => (
-                <tr key={String(r.cle)}><td>{juridictionLabel(String(r.cle))}</td><td>{r.cases}</td><td>{pct(r.win_rate)}</td></tr>
+                <tr key={String(r.cle)}><td>{juridictionLabel(String(r.cle))}</td><td>{r.cases}</td><td>{pct(r.win_rate)}</td>
+                  <td>{(r.delai_n ?? 0) > 0 ? delai(r.delai_median) : '—'}</td></tr>
               ))}
             </tbody>
           </table>

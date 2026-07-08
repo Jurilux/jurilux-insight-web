@@ -1,7 +1,7 @@
 // Vue d'ensemble — accueil analytics. KPIs globaux + répartition par matière /
 // juridiction / année (données publiques, avocats/parties uniquement).
 import { useEffect, useState } from 'react';
-import { analytics, euro, overview, pct, topArticles, TAUX_ESTIME, type Analytics, type ArticleCite, type Overview } from './api';
+import { analytics, delai, euro, overview, pct, topArticles, TAUX_ESTIME, type Analytics, type ArticleCite, type Overview } from './api';
 import { BarList, Kpi, YearTrend } from './charts';
 import { Err, Loader, useAsync } from './ui';
 import { juridictionLabel } from './juridictions';
@@ -46,6 +46,10 @@ export function Dashboard({ onPickMatter }: { onPickMatter: (m: string) => void 
           <Kpi label="Montant médian estimé" value={euro(ov.amount_median)}
             hint={`Médiane des montants du dispositif sur ${ov.amount_n} décisions chiffrées (indicatif).`} />
         )}
+        {(ov.delai_n ?? 0) > 0 && (
+          <Kpi label="Délai médian estimé" value={delai(ov.delai_median)}
+            hint={`Médiane des durées de procédure estimées sur ${ov.delai_n} décisions datées (indicatif).`} />
+        )}
       </div>
 
       <div className="grid-2">
@@ -61,9 +65,10 @@ export function Dashboard({ onPickMatter }: { onPickMatter: (m: string) => void 
 
         <section className="card">
           <h2>Par juridiction</h2>
-          <p className="muted small">Où se concentre le contentieux analysé.</p>
+          <p className="muted small">Volume, taux estimé et délai de procédure médian estimé.</p>
           <BarList rows={an.by_juridiction.slice(0, 10).map((r) => ({
             label: juridictionLabel(String(r.cle)), value: r.cases, rate: r.win_rate,
+            note: (r.delai_n ?? 0) > 0 ? delai(r.delai_median) : null,
           }))} />
         </section>
       </div>
