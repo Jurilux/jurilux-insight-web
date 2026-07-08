@@ -1,3 +1,9 @@
+# ⚠️ DÉPÔT ARCHIVÉ — produit fusionné dans Jurilux
+
+> **Ce front est terminé.** Ses vues (dashboard, cabinets, comparateur, rapport, méthodologie/RGPD)
+> ont été **intégrées à la page Insight de [`jurilux-web`](https://github.com/Jurilux/jurilux-web)**
+> dans le design jurilux (décision produit : un seul produit). Ne plus rien développer ici.
+
 # jurilux-insight-web
 
 Frontend du **dashboard d'intelligence contentieux** Jurilux Insight. Surface publique
