@@ -27,6 +27,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
@@ -65,6 +66,5 @@ jobs:
 
       - name: Smoke test
         run: |
-          sleep 2
-          curl -sSf -o /dev/null -w "front insight (insight.jurilux.lu): %{http_code}\n" \
+          curl -sSf --retry 5 --retry-delay 1 --retry-all-errors -o /dev/null -w "front insight (insight.jurilux.lu): %{http_code}\n" \
             "https://insight.jurilux.lu/"
